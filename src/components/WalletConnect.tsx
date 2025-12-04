@@ -1,36 +1,53 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
-
-interface Wallet {
-  name: string;
-  icon: string;
-  connected: boolean;
-}
-
-const wallets: Wallet[] = [
-  { name: 'Tonkeeper', icon: '💎', connected: false },
-  { name: 'OpenMask', icon: '🎭', connected: false },
-  { name: 'MyTonWallet', icon: '👛', connected: false },
-  { name: 'Tonhub', icon: '🔷', connected: false },
-];
+import { useTonConnectUI, useTonWallet, useTonAddress } from '@tonconnect/ui-react';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function WalletConnect() {
-  const [connected, setConnected] = useState(false);
-  const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
+  const [tonConnectUI] = useTonConnectUI();
+  const wallet = useTonWallet();
+  const address = useTonAddress();
 
-  const handleConnect = (wallet: Wallet) => {
-    setSelectedWallet(wallet);
-    setConnected(true);
+  useEffect(() => {
+    if (wallet && address) {
+      api.registerWallet(address, wallet.name || 'unknown')
+        .then(() => {
+          toast.success('Кошелёк успешно подключён!');
+        })
+        .catch((error) => {
+          console.error('Failed to register wallet:', error);
+        });
+    }
+  }, [wallet, address]);
+
+  const handleConnect = async () => {
+    try {
+      await tonConnectUI.openModal();
+    } catch (error) {
+      toast.error('Ошибка подключения кошелька');
+      console.error('Connection error:', error);
+    }
   };
 
-  const handleDisconnect = () => {
-    setSelectedWallet(null);
-    setConnected(false);
+  const handleDisconnect = async () => {
+    try {
+      await tonConnectUI.disconnect();
+      toast.success('Кошелёк отключён');
+    } catch (error) {
+      toast.error('Ошибка отключения');
+      console.error('Disconnect error:', error);
+    }
   };
 
-  if (connected && selectedWallet) {
+  const formatAddress = (addr: string) => {
+    if (!addr) return '';
+    return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
+  };
+
+  if (wallet && address) {
     return (
       <Card className="glass-card p-6 space-y-4 animate-fade-in">
         <div className="flex items-center justify-between">
@@ -48,49 +65,36 @@ export default function WalletConnect() {
 
         <div className="p-6 rounded-lg bg-gradient-to-br from-neon-blue/10 to-neon-purple/10 border border-primary/30">
           <div className="flex items-center gap-4 mb-4">
-            <div className="text-4xl">{selectedWallet.icon}</div>
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-neon-blue to-neon-purple flex items-center justify-center text-2xl">
+              💎
+            </div>
             <div>
-              <p className="font-semibold text-lg">{selectedWallet.name}</p>
+              <p className="font-semibold text-lg">{wallet.name}</p>
               <p className="text-xs text-muted-foreground font-mono">
-                UQC...7xK9
+                {formatAddress(address)}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="p-3 rounded-lg bg-card/50">
-              <p className="text-xs text-muted-foreground mb-1">Баланс TON</p>
-              <p className="text-xl font-bold">125.5</p>
+              <p className="text-xs text-muted-foreground mb-1">Статус</p>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+                <p className="text-sm font-semibold">Подключён</p>
+              </div>
             </div>
             <div className="p-3 rounded-lg bg-card/50">
-              <p className="text-xs text-muted-foreground mb-1">В USD</p>
-              <p className="text-xl font-bold">$232.50</p>
+              <p className="text-xs text-muted-foreground mb-1">Сеть</p>
+              <p className="text-sm font-semibold">TON Mainnet</p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">💎</span>
-              <span className="font-medium">TON</span>
-            </div>
-            <span className="font-bold">125.5</span>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">💵</span>
-              <span className="font-medium">USDT</span>
-            </div>
-            <span className="font-bold">1,500.0</span>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🔷</span>
-              <span className="font-medium">STON</span>
-            </div>
-            <span className="font-bold">5,000</span>
-          </div>
+        <div className="p-4 rounded-lg bg-muted/30 text-center">
+          <p className="text-sm text-muted-foreground">
+            Используйте кошелёк для обмена токенов
+          </p>
         </div>
       </Card>
     );
@@ -105,19 +109,27 @@ export default function WalletConnect() {
         Выберите кошелёк для начала работы
       </p>
 
-      <div className="space-y-3">
-        {wallets.map((wallet) => (
-          <Button
-            key={wallet.name}
-            variant="outline"
-            onClick={() => handleConnect(wallet)}
-            className="w-full h-16 justify-start gap-4 text-lg hover:bg-primary/10 hover:border-primary transition-all"
-          >
-            <span className="text-3xl">{wallet.icon}</span>
-            <span className="font-semibold">{wallet.name}</span>
-            <Icon name="ChevronRight" size={20} className="ml-auto" />
-          </Button>
-        ))}
+      <Button
+        onClick={handleConnect}
+        className="w-full h-16 text-lg bg-gradient-to-r from-neon-blue to-neon-purple hover:opacity-90 transition-all glow-effect"
+      >
+        <Icon name="Wallet" size={24} className="mr-3" />
+        Подключить TON кошелёк
+      </Button>
+
+      <div className="space-y-2 text-sm text-muted-foreground">
+        <p className="flex items-center gap-2">
+          <Icon name="Check" size={16} className="text-success" />
+          Поддержка всех TON кошельков
+        </p>
+        <p className="flex items-center gap-2">
+          <Icon name="Shield" size={16} className="text-success" />
+          Безопасное подключение через TON Connect
+        </p>
+        <p className="flex items-center gap-2">
+          <Icon name="Lock" size={16} className="text-success" />
+          Приватные ключи всегда у вас
+        </p>
       </div>
 
       <div className="pt-4 border-t border-border">

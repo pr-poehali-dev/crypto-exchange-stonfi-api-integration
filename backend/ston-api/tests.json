@@ -1,0 +1,21 @@
+{
+  "tests": [
+    {
+      "name": "Get markets data",
+      "method": "GET",
+      "path": "/?endpoint=markets",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "markets": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get pools data",
+      "method": "GET",
+      "path": "/?endpoint=pools",
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    }
+  ]
+}

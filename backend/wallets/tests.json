@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Register new wallet",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "address": "UQC_test_wallet_address",
+        "wallet_type": "tonkeeper"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "number",
+        "address": "string",
+        "wallet_type": "string",
+        "created_at": "string",
+        "last_connected": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

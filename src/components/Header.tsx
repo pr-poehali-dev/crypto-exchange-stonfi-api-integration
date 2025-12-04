@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 
 const navItems = [
   { label: 'Обмен', href: '#swap', icon: 'ArrowRightLeft' },
@@ -10,6 +11,17 @@ const navItems = [
 ];
 
 export default function Header() {
+  const [tonConnectUI] = useTonConnectUI();
+  const wallet = useTonWallet();
+
+  const handleWalletAction = async () => {
+    if (wallet) {
+      await tonConnectUI.disconnect();
+    } else {
+      await tonConnectUI.openModal();
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-20 items-center justify-between">
@@ -38,9 +50,12 @@ export default function Header() {
           <Button variant="outline" size="icon" className="hidden md:flex">
             <Icon name="Bell" size={20} />
           </Button>
-          <Button className="bg-gradient-to-r from-neon-blue to-neon-purple hover:opacity-90">
-            <Icon name="Wallet" size={16} className="mr-2" />
-            Подключить
+          <Button 
+            onClick={handleWalletAction}
+            className="bg-gradient-to-r from-neon-blue to-neon-purple hover:opacity-90"
+          >
+            <Icon name={wallet ? "LogOut" : "Wallet"} size={16} className="mr-2" />
+            {wallet ? "Отключить" : "Подключить"}
           </Button>
           <Button variant="ghost" size="icon" className="md:hidden">
             <Icon name="Menu" size={24} />
